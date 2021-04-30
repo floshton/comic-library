@@ -1,1 +1,12 @@
 GET http://localhost:8080/characters HTTP/1.1
+
+### 
+
+GET http://localhost:8080/characters/comics/Captain%20America HTTP/1.1
+
+### 
+
+GET http://localhost:8080/characters/comics/Iron%20Man HTTP/1.1
+### 
+
+GET http://localhost:8080/characters/test HTTP/1.1
