@@ -1,4 +1,4 @@
-package com.albo.comics.marvel.vo.remote;
+package com.albo.comics.marvel.vo.remote.comicsByCharacter;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,12 +35,4 @@ public class MarvelComicResponse {
         this.responseData = responseData;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder string = new StringBuilder();
-        string.append("code: ").append(code);
-        string.append(", status: ").append(status);
-        string.append(", responseData: ").append(responseData);
-        return string.toString();
-    }
 }

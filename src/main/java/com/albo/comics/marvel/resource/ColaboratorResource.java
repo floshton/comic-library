@@ -32,22 +32,9 @@ public class ColaboratorResource {
     }
 
     @GET
-    @Path("/{name}")
-    public CharacterCreator getComics(@PathParam("name") String name) {
-        CharacterDO charTemp = characterRepository.findByAlias(name);
-        CharacterDO theCharacter = syncService.getCharacterDO(charTemp.getName());
-        return translatingService.fromCharacter(theCharacter);
-    }
-
-    @GET
-    @Path("/test")
-    public String test() {
-        CharacterDO theCharacter = new CharacterDO();
-        theCharacter.setName("Iron Man");
-        theCharacter.setAlias("ironman");
-        theCharacter.setCreated(LocalDateTime.now());
-        theCharacter.setLastSync(LocalDateTime.now());
-        characterRepository.save(theCharacter);
-        return "OK";
+    @Path("/{alias}")
+    public CharacterCreator getComics(@PathParam("alias") String alias) {
+        CharacterDO theCharacter = syncService.getCharacterByAlias(alias);
+        return translatingService.getCreatorsForCharacter(theCharacter);
     }
 }

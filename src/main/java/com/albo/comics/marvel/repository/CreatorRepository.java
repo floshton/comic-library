@@ -18,9 +18,12 @@ public class CreatorRepository implements PanacheRepository<CreatorDO> {
     @Transactional
     public void save(CreatorDO entity) {
         try {
+            if (entity.getId() != null) {
+                getEntityManager().merge(entity);
+            }
             persistAndFlush(entity);
         } catch (PersistenceException pe) {
-            LOG.error("Unable to add Cretor to DB", pe);
+            LOG.errorf("Unable to add Creator with name [ %s ] to DB. Detail: %s", entity.getName(), pe.getCause());
         }
     }
 

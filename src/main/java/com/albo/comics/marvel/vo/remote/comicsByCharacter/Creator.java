@@ -1,4 +1,4 @@
-package com.albo.comics.marvel.vo.remote;
+package com.albo.comics.marvel.vo.remote.comicsByCharacter;
 
 public class Creator {
 

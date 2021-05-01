@@ -1,6 +1,6 @@
-package com.albo.comics.marvel.vo.remote;
+package com.albo.comics.marvel.vo.remote.character;
 
-import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,13 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class CharacterResponseData {
 
     @JsonProperty("results")
-    private List<Character> characters;
+    private Set<Character> characters;
 
-    public List<Character> getCharacters() {
+    public Set<Character> getCharacters() {
         return characters;
     }
 
-    public void setCharacters(List<Character> characters) {
+    public void setCharacters(Set<Character> characters) {
         this.characters = characters;
     }
 

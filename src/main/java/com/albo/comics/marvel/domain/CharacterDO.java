@@ -11,7 +11,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-
 import javax.persistence.JoinColumn;
 
 @Entity(name = "personaje")
@@ -27,10 +26,20 @@ public class CharacterDO {
     private LocalDateTime created;
     @Column(name = "dt_last_sync")
     private LocalDateTime lastSync;
+    private Boolean core;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "character_creator", joinColumns = @JoinColumn(name = "pk_character"), inverseJoinColumns = @JoinColumn(name = "pk_creator"))
     private Set<CreatorDO> creators;
+
+    @ManyToMany(mappedBy = "characters", cascade = CascadeType.MERGE)
+    /*
+     * @ManyToMany(cascade = CascadeType.ALL)
+     * 
+     * @JoinTable(name = "character_comic", joinColumns = @JoinColumn(name =
+     * "pk_character"), inverseJoinColumns = @JoinColumn(name = "pk_comic"))
+     */
+    private Set<ComicDO> comics;
 
     public CharacterDO() {
     }
@@ -40,6 +49,21 @@ public class CharacterDO {
         this.alias = alias;
         this.created = LocalDateTime.now();
         this.lastSync = LocalDateTime.now();
+    }
+
+    public CharacterDO(String name) {
+        this.name = name;
+        this.created = LocalDateTime.now();
+        this.lastSync = LocalDateTime.now();
+        this.core = false;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -80,6 +104,22 @@ public class CharacterDO {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public Set<ComicDO> getComics() {
+        return comics;
+    }
+
+    public void setComics(Set<ComicDO> comics) {
+        this.comics = comics;
+    }
+
+    public void setCore(Boolean core) {
+        this.core = core;
+    }
+
+    public Boolean getCore() {
+        return core;
     }
 
 }
