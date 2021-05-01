@@ -1,8 +1,6 @@
 package com.albo.comics.marvel.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +27,7 @@ public class TranslatingService {
     }
 
     private Set<String> getCollaboratorsByType(CharacterDO character, CreatorType type) {
-        return character.getCreators().stream().filter(col -> col.type.equals(type)).map(col -> col.name)
+        return character.getCreators().stream().filter(col -> col.getType().equals(type)).map(col -> col.getName())
                 .collect(Collectors.toSet());
     }
 

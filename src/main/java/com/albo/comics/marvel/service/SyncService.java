@@ -5,6 +5,7 @@ import javax.inject.Inject;
 
 import com.albo.comics.marvel.vo.remote.MarvelComicResponse;
 import com.albo.comics.marvel.domain.CharacterDO;
+import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.vo.remote.Character;
 
 @ApplicationScoped
@@ -16,6 +17,9 @@ public class SyncService {
     @Inject
     private TranslatingService translatingService;
 
+    @Inject
+    private CharacterRepository characterRepository;
+
     public CharacterDO getCharacterDO(String name) {
         Character character = marvelClientService.getCharacterByName(name);
         Long idCharacter = character.getId();
@@ -23,6 +27,11 @@ public class SyncService {
 
         CharacterDO theCharacter = translatingService.buildCharacter(character, response.getResponseData().getComics());
         return theCharacter;
+    }
+
+    public void syncCreatorsData(){
+        CharacterDO character = getCharacterDO("Iron Man");
+        characterRepository.save(character);
     }
 
 }

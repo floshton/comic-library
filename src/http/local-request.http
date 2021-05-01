@@ -1,12 +1,16 @@
-GET http://localhost:8080/characters HTTP/1.1
+GET http://localhost/characters HTTP/1.1
 
 ### 
 
-GET http://localhost:8080/characters/comics/Captain%20America HTTP/1.1
+GET http://localhost/marvel/characters/capamerica HTTP/1.1
 
 ### 
 
-GET http://localhost:8080/characters/comics/Iron%20Man HTTP/1.1
+GET http://localhost/marvel/characters/ironman HTTP/1.1
 ### 
 
-GET http://localhost:8080/characters/test HTTP/1.1
+GET http://localhost/marvel/characters/test HTTP/1.1
+### 
+
+# Consulta creators desde API Marvel y los persiste
+GET http://localhost/marvel/characters/testSyncCreators HTTP/1.1
