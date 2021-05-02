@@ -6,6 +6,7 @@ import javax.transaction.Transactional;
 
 import com.albo.comics.marvel.domain.CharacterDO;
 
+import org.hibernate.Hibernate;
 import org.jboss.logging.Logger;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
@@ -29,6 +30,14 @@ public class CharacterRepository implements PanacheRepository<CharacterDO> {
 
     public CharacterDO findByAlias(String alias) {
         return find("alias", alias).firstResult();
+    }
+
+    public CharacterDO findByAliasEagerComic(String alias) {
+        CharacterDO entity = find("alias", alias).firstResult();
+        if (entity != null) {
+            Hibernate.initialize(entity.getComics());
+        }
+        return entity;
     }
 
     public CharacterDO findByName(String name) {

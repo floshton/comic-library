@@ -26,6 +26,7 @@ public interface MarvelApiClientService {
         @Path("/characters/{idCharacter}/comics")
         @Produces("application/json")
         MarvelComicResponse getComicsByIdCharacter(@PathParam("idCharacter") Long idCharacter,
+                        @QueryParam("limit") Integer limit, @QueryParam("offset") Integer offset,
                         @QueryParam("ts") String timestamp, @QueryParam("apikey") String apikey,
                         @QueryParam("hash") String hash);
 

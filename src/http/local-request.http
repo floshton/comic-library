@@ -3,13 +3,14 @@ GET http://localhost/marvel/colaborators/capamerica HTTP/1.1
 GET http://localhost/marvel/colaborators/ironman HTTP/1.1
 
 ###
+GET http://localhost/marvel/characters/ironman HTTP/1.1
+
+###
+GET http://localhost/marvel/characters/capamerica HTTP/1.1
 
 
 
-
-
-
-# Consulta creators desde API Marvel y los persiste
+# Consulta al API Marvel y los persiste
 GET http://localhost/marvel/test/testSyncCreators HTTP/1.1
 ### 
 

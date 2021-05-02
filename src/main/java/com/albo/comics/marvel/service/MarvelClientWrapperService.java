@@ -51,15 +51,15 @@ public class MarvelClientWrapperService {
     }
 
     @CacheResult(cacheName = "comics-by-character-cache")
-    public MarvelComicResponse getComicsByCharacterId(Long id) {
+    public MarvelComicResponse getComicsByCharacterId(Long id, Integer limit, Integer offset) {
         String ts = getTimeStamp();
-        LOG.infof("Requesting Comic data for character with id %s", id);
-        MarvelComicResponse response = marvelCharacterService.getComicsByIdCharacter(id, ts, publicKey, getHash(ts));
+        LOG.infof("Requesting Comic data for character with id %s. Limit = [%s]. Offset = [%s]", id, limit, offset);
+        MarvelComicResponse response = marvelCharacterService.getComicsByIdCharacter(id, limit, offset, ts, publicKey, getHash(ts));
         return response;
     }
 
     @CacheResult(cacheName = "character-name-cache")
-    public Character getCharacterByName(String name) {
+    public Character getRemoteCharacterByName(String name) {
         Character theCharacter = null;
         String ts = getTimeStamp();
         LOG.infof("Requesting Character data for character %s", name);
@@ -84,7 +84,7 @@ public class MarvelClientWrapperService {
     @CacheResult(cacheName = "character-alias-cache")
     public Character getRemoteCharacterByAlias(String alias) {
         CharacterDO character = characterRepository.findByAlias(alias);
-        return this.getCharacterByName(character.getName());
+        return this.getRemoteCharacterByName(character.getName());
     }
 
 }

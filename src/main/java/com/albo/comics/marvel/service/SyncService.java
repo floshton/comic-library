@@ -1,7 +1,9 @@
 package com.albo.comics.marvel.service;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -9,11 +11,16 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 
+import com.albo.comics.marvel.vo.local.CharacterCreator;
+import com.albo.comics.marvel.vo.local.CharactersComicInfo;
+import com.albo.comics.marvel.vo.local.CharactersInComicsReponse;
 import com.albo.comics.marvel.vo.remote.character.Character;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.Comic;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.MarvelComicResponse;
 
 import org.jboss.logging.Logger;
+
+import io.quarkus.panache.common.Parameters;
 
 import com.albo.comics.marvel.domain.CharacterDO;
 import com.albo.comics.marvel.domain.ComicDO;
@@ -41,16 +48,45 @@ public class SyncService {
     @Inject
     private CreatorRepository creatorRepository;
 
-    private CharacterDO getCharacterWithRemoteDataByName(String name) {
-        Character character = marvelClientServiceWrapper.getCharacterByName(name);
-        Long idCharacter = character.getId();
-        MarvelComicResponse creatorsResponseData = marvelClientServiceWrapper.getComicsByCharacterId(idCharacter);
+    public CharacterCreator getCreatorsAssociatedWithCharacters(String alias) {
+        CharacterDO theCharacter = getCharacterByAlias(alias);
+        return translatingService.getCreatorsForCharacter(theCharacter);
+    }
 
-        CharacterDO theCharacter = translatingService.buildCharacterEntity(character, creatorsResponseData.getResponseData().getComics());
+    public CharactersInComicsReponse getCharactersAssociatedWithCharacter(String alias) {
+        CharactersInComicsReponse theResponse = new CharactersInComicsReponse();
+
+        CharacterDO theCharacter = getCharacterByAlias(alias);
+        theResponse.setLastSync(theCharacter.getLastSync());
+
+        List<ComicDO> comics = comicRepository.list(":theCharacter MEMBER OF characters",
+                Parameters.with("theCharacter", theCharacter));
+        LOG.debugf("Found %s Comic results", comics.size());
+
+        for (ComicDO theComic : comics) {
+            List<CharacterDO> charactersInComic = characterRepository
+                    .find(":theComics MEMBER OF comics", Parameters.with("theComics", theComic)).list();
+
+            for (CharacterDO character : charactersInComic) {
+                theResponse.addCharacterAndComic(character.getName(), theComic.getName());
+            }
+
+        }
+
+        return theResponse;
+    }
+
+    private CharacterDO getCharacterDOWithRemoteDataByName(String name) {
+        Character character = marvelClientServiceWrapper.getRemoteCharacterByName(name);
+        Long idCharacter = character.getId();
+        MarvelComicResponse creatorsResponseData = null;//marvelClientServiceWrapper.getComicsByCharacterId(idCharacter);
+
+        CharacterDO theCharacter = translatingService.buildCharacterEntity(character,
+                creatorsResponseData.getResponseData().getComics());
         return theCharacter;
     }
 
-    public CharacterDO getCharacterByAlias(String alias) {
+    private CharacterDO getCharacterByAlias(String alias) {
         return characterRepository.findByAlias(alias);
     }
 
@@ -58,7 +94,7 @@ public class SyncService {
     public void syncCreatorsByCharacterData() {
         List<CharacterDO> characters = characterRepository.find("core", true).list();
         for (CharacterDO characterDO : characters) {
-            CharacterDO character = getCharacterWithRemoteDataByName(characterDO.getName());
+            CharacterDO character = getCharacterDOWithRemoteDataByName(characterDO.getName());
             characterRepository.save(character);
         }
 
@@ -66,10 +102,35 @@ public class SyncService {
 
     @Transactional
     public void syncCharactersByComicData() {
-        Character remoteCharacter = marvelClientServiceWrapper.getRemoteCharacterByAlias("capamerica");
-        MarvelComicResponse response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId());
-        List<Comic> comics = response.getResponseData().getComics();
+        List<CharacterDO> characters = characterRepository.find("core", true).list();
+        for (CharacterDO characterDO : characters) {
+            Character remoteCharacter = marvelClientServiceWrapper.getRemoteCharacterByName(characterDO.getName());
+            syncCharacterByComic(remoteCharacter);
+        }
+    }
 
+    public void syncCharacterByComic(Character remoteCharacter) {
+        Integer limit = 5; //100
+        Integer offset = 0;
+        Integer comicTotalCount = 0;
+        MarvelComicResponse response;
+
+        response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), limit, offset);
+        comicTotalCount = response.getResponseData().getTotal();
+        LOG.debugf("Comic Count for Character %s [%s] = %s", remoteCharacter.getName(), remoteCharacter.getId(),
+                comicTotalCount);
+        comicTotalCount = 7; //delete
+
+        processCharacterByComicData(response, remoteCharacter);
+        for (int i = 0; i < comicTotalCount / limit; i++) {
+            offset += limit;
+            response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), limit, offset);
+            processCharacterByComicData(response, remoteCharacter);
+        }
+    }
+
+    private void processCharacterByComicData(MarvelComicResponse response, Character remoteCharacter) {
+        List<Comic> comics = response.getResponseData().getComics();
         for (Comic comic : comics) {
             Set<Character> charactersInComic = marvelClientServiceWrapper.getCharacterByComic(comic.getId());
             createAndSaveComic(comic, charactersInComic, remoteCharacter.getName());
@@ -83,7 +144,7 @@ public class SyncService {
 
     private ComicDO buildComic(Comic comic, Set<Character> charactersInComic, String baseCharacterName) {
         ComicDO comicDO = new ComicDO(comic.getTitle());
-        //comicRepository.save(comicDO);
+        // comicRepository.save(comicDO);
         Set<CharacterDO> characters = buildCharactersForComic(charactersInComic, baseCharacterName);
         comicDO.setCharacters(characters);
         return comicDO;

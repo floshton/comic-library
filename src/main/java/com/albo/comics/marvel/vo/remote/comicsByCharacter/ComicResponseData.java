@@ -10,6 +10,7 @@ public class ComicResponseData {
 
     @JsonProperty("results")
     private List<Comic> comics;
+    private Integer total;
 
     public List<Comic> getComics() {
         return comics;
@@ -19,13 +20,12 @@ public class ComicResponseData {
         this.comics = comics;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder string = new StringBuilder();
+    public Integer getTotal() {
+        return total;
+    }
 
-        comics.forEach(item -> string.append(item));
-
-        return string.toString();
+    public void setTotal(Integer total) {
+        this.total = total;
     }
 
 }
