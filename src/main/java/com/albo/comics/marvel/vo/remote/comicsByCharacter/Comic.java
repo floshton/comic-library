@@ -9,7 +9,9 @@ public class Comic {
     private Long id;
     private String title;
     @JsonProperty("creators")
-    private CreatorsContainer creatorsContainer;
+    private PersonsContainer creatorsContainer;
+    @JsonProperty("characters")
+    private PersonsContainer charactersContainer;
 
     public Long getId() {
         return id;
@@ -27,11 +29,19 @@ public class Comic {
         this.title = title;
     }
 
-    public CreatorsContainer getCreatorsContainer() {
+    public PersonsContainer getCharactersContainer() {
+        return charactersContainer;
+    }
+
+    public void setCharactersContainer(PersonsContainer charactersContainer) {
+        this.charactersContainer = charactersContainer;
+    }
+
+    public PersonsContainer getCreatorsContainer() {
         return creatorsContainer;
     }
 
-    public void setCreatorsContainer(CreatorsContainer creatorsContainer) {
+    public void setCreatorsContainer(PersonsContainer creatorsContainer) {
         this.creatorsContainer = creatorsContainer;
     }
 

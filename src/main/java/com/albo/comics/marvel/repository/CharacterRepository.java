@@ -21,8 +21,10 @@ public class CharacterRepository implements PanacheRepository<CharacterDO> {
         try {
             if (entity.getId() != null) {
                 getEntityManager().merge(entity);
+                flush();
+            } else{
+                persistAndFlush(entity);
             }
-            persistAndFlush(entity);
         } catch (PersistenceException pe) {
             LOG.errorf("Unable to add Character with name [ %s ] to DB. Detail: %s", entity.getName(), pe);
         }

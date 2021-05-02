@@ -1,7 +1,5 @@
 package com.albo.comics.marvel.service;
 
-import java.util.Set;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -9,7 +7,6 @@ import com.albo.comics.marvel.domain.CharacterDO;
 import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.vo.remote.character.Character;
 import com.albo.comics.marvel.vo.remote.character.MarvelCharacterResponse;
-import com.albo.comics.marvel.vo.remote.charactersByComic.MarvelCharactersByComicResponse;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.MarvelComicResponse;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -26,7 +23,7 @@ public class MarvelClientWrapperService {
 
     @Inject
     @RestClient
-    MarvelApiClientService marvelCharacterService;
+    MarvelApiClientService marvelApiClientService;
 
     @Inject
     CharacterRepository characterRepository;
@@ -54,7 +51,8 @@ public class MarvelClientWrapperService {
     public MarvelComicResponse getComicsByCharacterId(Long id, Integer limit, Integer offset) {
         String ts = getTimeStamp();
         LOG.infof("Requesting Comic data for character with id %s. Limit = [%s]. Offset = [%s]", id, limit, offset);
-        MarvelComicResponse response = marvelCharacterService.getComicsByIdCharacter(id, limit, offset, ts, publicKey, getHash(ts));
+        MarvelComicResponse response = marvelApiClientService.getComicsByIdCharacter(id, limit, offset, ts, publicKey,
+                getHash(ts));
         return response;
     }
 
@@ -63,22 +61,12 @@ public class MarvelClientWrapperService {
         Character theCharacter = null;
         String ts = getTimeStamp();
         LOG.infof("Requesting Character data for character %s", name);
-        MarvelCharacterResponse response = marvelCharacterService.getByName(name, ts, publicKey, getHash(ts));
+        MarvelCharacterResponse response = marvelApiClientService.getByName(name, ts, publicKey, getHash(ts));
 
         if (response != null && "200".equals(response.getCode())) {
             theCharacter = (Character) response.getResponseData().getCharacters().toArray()[0];
         }
         return theCharacter;
-    }
-
-    // @CacheResult(cacheName = "characters-by-comic-cache")
-    public Set<Character> getCharacterByComic(Long id) {
-        String ts = getTimeStamp();
-        LOG.infof("Requesting Character data for Comic %s", id);
-        MarvelCharactersByComicResponse response = marvelCharacterService.getCharactersByComicId(id, ts, publicKey,
-                getHash(ts));
-
-        return response.getResponseData().getCharacters();
     }
 
     @CacheResult(cacheName = "character-alias-cache")

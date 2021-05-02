@@ -1,6 +1,6 @@
 package com.albo.comics.marvel.vo.remote.comicsByCharacter;
 
-public class Creator {
+public class ComicPerson {
 
     private String name;
     private String role;
@@ -23,9 +23,9 @@ public class Creator {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Creator && obj != null) {
+        if (obj instanceof ComicPerson && obj != null) {
             {
-                Creator other = (Creator) obj;
+                ComicPerson other = (ComicPerson) obj;
                 return this.name.equals(other.name) && this.role.equals(other.role);
             }
         } else {

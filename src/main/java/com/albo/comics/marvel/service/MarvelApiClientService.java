@@ -6,7 +6,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import com.albo.comics.marvel.vo.remote.character.MarvelCharacterResponse;
-import com.albo.comics.marvel.vo.remote.charactersByComic.MarvelCharactersByComicResponse;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.MarvelComicResponse;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
@@ -30,10 +29,4 @@ public interface MarvelApiClientService {
                         @QueryParam("ts") String timestamp, @QueryParam("apikey") String apikey,
                         @QueryParam("hash") String hash);
 
-        @GET
-        @Path("/comics/{comicId}/characters")
-        @Produces("application/json")
-        MarvelCharactersByComicResponse getCharactersByComicId(@PathParam("comicId") Long idComic,
-                        @QueryParam("ts") String timestamp, @QueryParam("apikey") String apikey,
-                        @QueryParam("hash") String hash);
 }

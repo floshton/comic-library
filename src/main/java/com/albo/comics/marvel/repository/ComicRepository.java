@@ -1,7 +1,5 @@
 package com.albo.comics.marvel.repository;
 
-import java.util.List;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
@@ -20,7 +18,7 @@ public class ComicRepository implements PanacheRepository<ComicDO> {
     @Transactional
     public void save(ComicDO entity) {
         try {
-            if(entity.getId() != null){
+            if (entity.getId() != null) {
                 getEntityManager().merge(entity);
             }
             persistAndFlush(entity);
@@ -28,15 +26,4 @@ public class ComicRepository implements PanacheRepository<ComicDO> {
             LOG.errorf("Unable to add Comic with name [ %s ] to DB. Detail: %s", entity.getName(), pe);
         }
     }
-
-/*     public void deleteAllComic(){
-        try {
-            deleteAll();
-            List<ComicDO> comics = listAll();
-            comics.forEach(comic -> delete(comic));
-        } catch (Exception e) {
-            //TODO: handle exception
-        }
-    } */
-
 }
