@@ -13,6 +13,10 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * This class represents response to 'characters' endpoint. Provides utility
+ * methods for appending info to existing instance and formatting retrieval
+ */
 public class CharactersInComicsReponse {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyy hh:mm:ss")

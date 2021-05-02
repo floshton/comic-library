@@ -8,7 +8,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.albo.comics.marvel.repository.CharacterRepository;
-import com.albo.comics.marvel.service.SyncService;
+import com.albo.comics.marvel.service.QueryService;
 import com.albo.comics.marvel.vo.local.CharacterCreator;
 
 @Path("/marvel/colaborators")
@@ -16,7 +16,7 @@ import com.albo.comics.marvel.vo.local.CharacterCreator;
 public class ColaboratorResource {
 
     @Inject
-    private SyncService syncService;
+    private QueryService queryService;
 
     @Inject
     CharacterRepository characterRepository;
@@ -27,6 +27,6 @@ public class ColaboratorResource {
     @GET
     @Path("/{alias}")
     public CharacterCreator getComics(@PathParam("alias") String alias) {
-        return syncService.getCreatorsAssociatedWithCharacters(alias);
+        return queryService.getCreatorsAssociatedWithCharacters(alias);
     }
 }

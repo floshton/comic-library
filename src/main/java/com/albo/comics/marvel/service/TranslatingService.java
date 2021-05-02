@@ -36,6 +36,12 @@ public class TranslatingService {
 
     private static final Logger LOG = Logger.getLogger(TranslatingService.class);
 
+    /**
+     * Transforms a CharacterDO entity into a response for 'colaborators' endpoint
+     * 
+     * @param theCharacter
+     * @return the response that contains collaborators associated with theCharacter
+     */
     public CharacterCreator getCreatorsForCharacter(CharacterDO theCharacter) {
         Set<String> writers = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
         Set<String> colorists = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
@@ -45,6 +51,13 @@ public class TranslatingService {
         return new CharacterCreator(lastSync, editors, writers, colorists);
     }
 
+    /**
+     * Builds response object for 'characters' endpoint
+     * 
+     * @param theCharacter instance of CharacterDO for which associated characters
+     *                     should be reported
+     * @return the response that contains characters associated with theCharacter
+     */
     public CharactersInComicsReponse getCharactersAssociatedWithCharacter(CharacterDO theCharacter) {
         CharactersInComicsReponse theResponse = new CharactersInComicsReponse();
         theResponse.setLastSync(theCharacter.getLastSync());
@@ -66,6 +79,14 @@ public class TranslatingService {
         return theResponse;
     }
 
+    /**
+     * Filter collaborators from a specific type
+     * 
+     * @param character CharacterDO instance to which collaborators are associated
+     * @param type      required type to be filtered
+     * @return a Set intance that contains collaborators of specific type for the
+     *         character
+     */
     private Set<String> getCollaboratorsByType(CharacterDO character, CreatorType type) {
         return character.getCreators().stream().filter(col -> col.getType().equals(type)).map(col -> col.getName())
                 .sorted().collect(Collectors.toCollection(LinkedHashSet::new));
@@ -122,6 +143,13 @@ public class TranslatingService {
         return theCharacter;
     }
 
+    /**
+     * In response, only roles EDITOR, WRITER and COLORIST are required, so others
+     * are filtered out
+     * 
+     * @param creator collaborator with a specific role
+     * @return true if the collaborator matches required roles
+     */
     private boolean areRolesAllowed(ComicPerson creator) {
         return creator.getRole().equals("editor") || creator.getRole().equals("writer")
                 || creator.getRole().equals("colorist");

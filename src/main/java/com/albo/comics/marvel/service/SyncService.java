@@ -8,8 +8,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 
-import com.albo.comics.marvel.vo.local.CharacterCreator;
-import com.albo.comics.marvel.vo.local.CharactersInComicsReponse;
 import com.albo.comics.marvel.vo.remote.character.Character;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.Comic;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.MarvelComicResponse;
@@ -19,11 +17,16 @@ import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.repository.ComicRepository;
 import com.albo.comics.marvel.repository.CreatorRepository;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import io.quarkus.cache.CacheInvalidateAll;
-import io.quarkus.cache.CacheResult;
+import io.quarkus.scheduler.Scheduled;
 
+/**
+ * This service lists methods for syncing data between Marvel API and local
+ * database, providing methods for parsing and transforming response
+ */
 @ApplicationScoped
 public class SyncService {
 
@@ -44,22 +47,21 @@ public class SyncService {
     @Inject
     private CreatorRepository creatorRepository;
 
-    @CacheResult(cacheName = "query-creators-cache")
-    public CharacterCreator getCreatorsAssociatedWithCharacters(String alias) {
-        CharacterDO theCharacter = getCharacterByAlias(alias);
-        return translatingService.getCreatorsForCharacter(theCharacter);
+    @ConfigProperty(name = "marvel.api.sync.batch.size")
+    private Integer countLimitPerRequest;
+
+    /**
+     * Scheduled method for syncing info from Marvel API
+     */
+    @Scheduled(every = "{marvel.api.sync.frequency}")
+    void syncData() {
+        //deleteSyncedData();
+        synchronizeDataFromMarvelApi();
     }
 
-    @CacheResult(cacheName = "query-characters-cache")
-    public CharactersInComicsReponse getCharactersAssociatedWithCharacter(String alias) {
-        CharacterDO theCharacter = getCharacterByAlias(alias);
-        return translatingService.getCharactersAssociatedWithCharacter(theCharacter);
-    }
-
-    private CharacterDO getCharacterByAlias(String alias) {
-        return characterRepository.findByAlias(alias);
-    }
-
+    /**
+     * Sync data from Marvel API for required characters
+     */
     public void synchronizeDataFromMarvelApi() {
         List<CharacterDO> characters = characterRepository.find("core", true).list();
         for (CharacterDO characterDO : characters) {
@@ -69,11 +71,16 @@ public class SyncService {
         invalidateQueryCaches();
     }
 
+    /**
+     * Sync data from Marvel API for passed character
+     * 
+     * @param remoteCharacter the instance of Caracter whose data should be
+     *                        requested
+     */
     public void syncDataByCharacter(Character remoteCharacter) {
         LOG.info("Starting sync process from Marvel API");
         Instant start = Instant.now();
 
-        Integer countLimitPerRequest = 100;
         Integer offset = 0;
         Integer comicTotalCount = 0;
         MarvelComicResponse response;
@@ -81,9 +88,9 @@ public class SyncService {
         response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), countLimitPerRequest,
                 offset);
         comicTotalCount = response.getResponseData().getTotal();
-        LOG.debugf("Comic Count for Character %s [%s] = %s", remoteCharacter.getName(), remoteCharacter.getId(),
+        LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(), remoteCharacter.getId(),
                 comicTotalCount);
-         //comicTotalCount = 90; // delete
+        comicTotalCount = 90; // delete
 
         processApiResponse(response, remoteCharacter);
 
@@ -96,9 +103,16 @@ public class SyncService {
 
         Instant finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toSeconds();
-        LOG.infof("Sync process from Marvel API Completed in %s seconds", timeElapsed);
+        LOG.infof("Sync process from Marvel API Completed in [ %s seconds ]", timeElapsed);
     }
 
+    /**
+     * 
+     * Parses and persists info in DB
+     * 
+     * @param response        Marvel API response
+     * @param remoteCharacter the instance of Caracter whose data was requested
+     */
     @Transactional
     private void processApiResponse(MarvelComicResponse response, Character remoteCharacter) {
         processCharacterByComicData(response, remoteCharacter);
@@ -123,27 +137,57 @@ public class SyncService {
         comicRepository.save(comicDO);
     }
 
+    /**
+     * Delete Comic associated info from DB
+     */
     @Transactional
     public void deleteComicInfo() {
         long deletedCount = comicRepository.deleteAll();
-        LOG.debugf("Deleted Comic count: [ %s ]", deletedCount);
+        LOG.infof("Deleted Comic count: [ %s ]", deletedCount);
     }
 
+    /**
+     * Delete Creators associated info from DB
+     */
     @Transactional
     public void deleteCreatorsInfo() {
         long deletedCount = creatorRepository.deleteAll();
-        LOG.debugf("Deleted Creators count: [ %s ]", deletedCount);
+        LOG.infof("Deleted Creators count: [ %s ]", deletedCount);
     }
 
+    /**
+     * Delete Characters associated info from DB. Note that Captain America and Iron
+     * Man, since are flagged as core characters, are not to be deleted
+     */
     @Transactional
     public void deleteCharactersInfo() {
         long deletedCount = characterRepository.deleteUnimportant();
-        LOG.debugf("Deleted Characters count: [ %s ]", deletedCount);
+        LOG.infof("Deleted Characters count: [ %s ]", deletedCount);
     }
 
+    private void deleteSyncedData(){
+        deleteCharactersInfo();
+        deleteComicInfo();
+        deleteCreatorsInfo();
+    }
+
+    /**
+     * Invalidates caches for querying data from DB. Useful after performing a sync, since data might have
+     * changed
+     */
     @CacheInvalidateAll(cacheName = "query-creators-cache")
     @CacheInvalidateAll(cacheName = "query-characters-cache")
     public void invalidateQueryCaches() {
+        LOG.infof("Invalidating caches for keys [ %s ] and [ %s ]", "query-creators-cache", "query-characters-cache");
+    }
+
+    /**
+     * Invalidates caches for requesting data from API. Useful before a full sync
+     */
+    @CacheInvalidateAll(cacheName = "api-comics-by-character-cache")
+    @CacheInvalidateAll(cacheName = "api-character-name-cache")
+    public void invalidateMarvelApiCaches() {
+        LOG.infof("Invalidating caches for keys [ %s ] and [ %s ]", "api-comics-by-character-cache", "api-character-name-cache");
     }
 
 }

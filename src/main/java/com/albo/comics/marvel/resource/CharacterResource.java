@@ -7,7 +7,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.albo.comics.marvel.service.SyncService;
+import com.albo.comics.marvel.service.QueryService;
 import com.albo.comics.marvel.vo.local.CharactersInComicsReponse;
 
 @Path("/marvel/characters")
@@ -15,7 +15,7 @@ import com.albo.comics.marvel.vo.local.CharactersInComicsReponse;
 public class CharacterResource {
 
     @Inject
-    private SyncService syncService;
+    private QueryService queryService;
 
     public CharacterResource() {
     }
@@ -23,6 +23,6 @@ public class CharacterResource {
     @GET
     @Path("/{alias}")
     public CharactersInComicsReponse getComics(@PathParam("alias") String alias) {
-        return syncService.getCharactersAssociatedWithCharacter(alias);
+        return queryService.getCharactersAssociatedWithCharacter(alias);
     }
 }

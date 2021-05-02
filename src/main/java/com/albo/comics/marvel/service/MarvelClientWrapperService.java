@@ -16,6 +16,9 @@ import org.jboss.logging.Logger;
 
 import io.quarkus.cache.CacheResult;
 
+/**
+ * Utility service that wraps requests to Marvel API 
+ */
 @ApplicationScoped
 public class MarvelClientWrapperService {
 
@@ -47,7 +50,7 @@ public class MarvelClientWrapperService {
         return theHash;
     }
 
-    @CacheResult(cacheName = "comics-by-character-cache")
+    @CacheResult(cacheName = "api-comics-by-character-cache")
     public MarvelComicResponse getComicsByCharacterId(Long id, Integer limit, Integer offset) {
         String ts = getTimeStamp();
         LOG.infof("Requesting Comic data for character with id %s. Limit = [%s]. Offset = [%s]", id, limit, offset);
@@ -56,7 +59,7 @@ public class MarvelClientWrapperService {
         return response;
     }
 
-    @CacheResult(cacheName = "character-name-cache")
+    @CacheResult(cacheName = "api-character-name-cache")
     public Character getRemoteCharacterByName(String name) {
         Character theCharacter = null;
         String ts = getTimeStamp();
@@ -69,7 +72,7 @@ public class MarvelClientWrapperService {
         return theCharacter;
     }
 
-    @CacheResult(cacheName = "character-alias-cache")
+    @CacheResult(cacheName = "api-character-alias-cache")
     public Character getRemoteCharacterByAlias(String alias) {
         CharacterDO character = characterRepository.findByAlias(alias);
         return this.getRemoteCharacterByName(character.getName());
