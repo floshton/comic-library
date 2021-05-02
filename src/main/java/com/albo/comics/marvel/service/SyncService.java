@@ -55,7 +55,7 @@ public class SyncService {
      */
     @Scheduled(every = "{marvel.api.sync.frequency}")
     void syncData() {
-        //deleteSyncedData();
+        // deleteSyncedData();
         synchronizeDataFromMarvelApi();
     }
 
@@ -63,47 +63,54 @@ public class SyncService {
      * Sync data from Marvel API for required characters
      */
     public void synchronizeDataFromMarvelApi() {
+        LOG.infof("Starting sync process from Marvel API ");
+        Instant start = Instant.now();
+
         List<CharacterDO> characters = characterRepository.find("core", true).list();
         for (CharacterDO characterDO : characters) {
             Character remoteCharacter = marvelClientServiceWrapper.getRemoteCharacterByName(characterDO.getName());
             syncDataByCharacter(remoteCharacter);
         }
+
         invalidateQueryCaches();
+
+        Instant finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toSeconds();
+        LOG.infof("Sync process from Marvel API Completed in [ %s seconds ]", timeElapsed);
     }
 
     /**
-     * Sync data from Marvel API for passed character
+     * Sync data from Marvel API for passed character. Depending on the total
+     * results, it might run several times, changing 'offset' parameter in query to
+     * API
      * 
      * @param remoteCharacter the instance of Caracter whose data should be
      *                        requested
      */
     public void syncDataByCharacter(Character remoteCharacter) {
-        LOG.info("Starting sync process from Marvel API");
-        Instant start = Instant.now();
+        LOG.infof("Starting sync for character %s [ID = %s]", remoteCharacter.getName(), remoteCharacter.getId());
 
-        Integer offset = 0;
-        Integer comicTotalCount = 0;
+        Integer offset = 0, comicTotalCount = 0;
         MarvelComicResponse response;
+        boolean isFirstRun = true;
 
-        response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), countLimitPerRequest,
-                offset);
-        comicTotalCount = response.getResponseData().getTotal();
-        LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(), remoteCharacter.getId(),
-                comicTotalCount);
-        comicTotalCount = 90; // delete
-
-        processApiResponse(response, remoteCharacter);
-
-        for (int i = 0; i < comicTotalCount / countLimitPerRequest; i++) {
-            offset += countLimitPerRequest;
+        do {
             response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), countLimitPerRequest,
                     offset);
-            processApiResponse(response, remoteCharacter);
-        }
+            comicTotalCount = response.getResponseData().getTotal();
+            //
+            comicTotalCount = countLimitPerRequest + 5; // delete
 
-        Instant finish = Instant.now();
-        long timeElapsed = Duration.between(start, finish).toSeconds();
-        LOG.infof("Sync process from Marvel API Completed in [ %s seconds ]", timeElapsed);
+            if (isFirstRun) {
+                LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),
+                        remoteCharacter.getId(), comicTotalCount);
+            }
+            processApiResponse(response, remoteCharacter);
+
+            offset += countLimitPerRequest;
+            isFirstRun = false;
+
+        } while (offset < comicTotalCount);
     }
 
     /**
@@ -165,15 +172,18 @@ public class SyncService {
         LOG.infof("Deleted Characters count: [ %s ]", deletedCount);
     }
 
-    private void deleteSyncedData(){
+    /**
+     * Delete synced info from DB
+     */
+    private void deleteSyncedData() {
         deleteCharactersInfo();
         deleteComicInfo();
         deleteCreatorsInfo();
     }
 
     /**
-     * Invalidates caches for querying data from DB. Useful after performing a sync, since data might have
-     * changed
+     * Invalidates caches for querying data from DB. Useful after performing a sync,
+     * since data might have changed
      */
     @CacheInvalidateAll(cacheName = "query-creators-cache")
     @CacheInvalidateAll(cacheName = "query-characters-cache")
@@ -187,7 +197,8 @@ public class SyncService {
     @CacheInvalidateAll(cacheName = "api-comics-by-character-cache")
     @CacheInvalidateAll(cacheName = "api-character-name-cache")
     public void invalidateMarvelApiCaches() {
-        LOG.infof("Invalidating caches for keys [ %s ] and [ %s ]", "api-comics-by-character-cache", "api-character-name-cache");
+        LOG.infof("Invalidating caches for keys [ %s ] and [ %s ]", "api-comics-by-character-cache",
+                "api-character-name-cache");
     }
 
 }

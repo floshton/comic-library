@@ -53,7 +53,7 @@ public class MarvelClientWrapperService {
     @CacheResult(cacheName = "api-comics-by-character-cache")
     public MarvelComicResponse getComicsByCharacterId(Long id, Integer limit, Integer offset) {
         String ts = getTimeStamp();
-        LOG.infof("Requesting Comic data for character with id %s. Limit = [%s]. Offset = [%s]", id, limit, offset);
+        LOG.debugf("Requesting Comic data for character with id %s. Limit = [%s]. Offset = [%s]", id, limit, offset);
         MarvelComicResponse response = marvelApiClientService.getComicsByIdCharacter(id, limit, offset, ts, publicKey,
                 getHash(ts));
         return response;
@@ -63,7 +63,7 @@ public class MarvelClientWrapperService {
     public Character getRemoteCharacterByName(String name) {
         Character theCharacter = null;
         String ts = getTimeStamp();
-        LOG.infof("Requesting Character data for character %s", name);
+        LOG.debugf("Requesting Character data for character %s", name);
         MarvelCharacterResponse response = marvelApiClientService.getByName(name, ts, publicKey, getHash(ts));
 
         if (response != null && "200".equals(response.getCode())) {
