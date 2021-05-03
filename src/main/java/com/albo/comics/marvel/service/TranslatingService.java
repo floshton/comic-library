@@ -118,7 +118,8 @@ public class TranslatingService {
 
     private Set<CharacterDO> buildCharactersForComic(Comic comic, String baseCharacter) {
         Set<CharacterDO> charactersTemp = comic.getCharactersContainer().getPersons().stream()
-                .filter(item -> !baseCharacter.equals(item.getName())).map(item -> new CharacterDO(item.getName()))
+                //.filter(item -> !baseCharacter.equals(item.getName()))
+                .map(item -> new CharacterDO(item.getName()))
                 .collect(Collectors.toSet());
         Set<CharacterDO> characters = new HashSet<>();
         for (CharacterDO characterFromApi : charactersTemp) {

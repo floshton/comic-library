@@ -54,10 +54,10 @@ public class SyncService {
     /**
      * Scheduled method for syncing info from Marvel API
      */
-    // @Scheduled(every = "{marvel.api.sync.frequency}")
+    @Scheduled(every = "{marvel.api.sync.frequency}")
     void syncData() {
         try {
-            // deleteSyncedData();
+            deleteSyncedData();
             synchronizeDataFromMarvelApi();
         } catch (ApiSyncException e) {
             LOG.error("Sync process couldn't be completed");
@@ -111,8 +111,8 @@ public class SyncService {
                 response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(),
                         countLimitPerRequest, offset);
                 comicTotalCount = response.getResponseData().getTotal();
-                //
-                comicTotalCount = countLimitPerRequest + 5; // delete
+                
+                //comicTotalCount = countLimitPerRequest + 5; // delete
 
                 if (isFirstRun) {
                     LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),

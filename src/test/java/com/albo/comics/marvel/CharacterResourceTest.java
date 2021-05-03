@@ -8,12 +8,12 @@ import static io.restassured.RestAssured.given;
 @QuarkusTest
 public class CharacterResourceTest {
 
-    @Test
-    public void testHelloEndpoint() {
+/*     @Test
+    public void testResourceIsUp() {
         given()
-          .when().get("/characters")
+          .when().get("/marvel/colaborators/antman")
           .then()
              .statusCode(200);
-    }
+    } */
 
 }

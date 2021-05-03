@@ -22,7 +22,14 @@ El componente sirve peticiones REST y utiliza las siguientes extensiones:
 La aplicación cuenta con dos endpoints adicionales a la funcionalidad básica requerida:
 
 - Swagger. UI de Swagger que documenta los servicios expuestos, además de endpoints utilitarios
+```shell script
+http://localhost/q/swagger-ui/
+```
+
 - Health. UI que muestra el estado de salud de la aplicación.
+```shell script
+http://localhost/q/health-ui/
+```
 
 ## Inicializando aplicación y base de datos
 
@@ -32,17 +39,57 @@ Para poder orquestar los componentes de la aplicación, jar y base de datos, es 
 
 ### Compilando y construyendo aplicación
 
-Aprovechando la naturaleza contenerizable de Quarkus, ésta debe compilarse y empaquetarse utilizando Docker. Para ello, es necesario ejecutar el siguiente comando:
+Aprovechando la naturaleza contenerizable de Quarkus, ésta debe compilarse y empaquetarse utilizando Docker. Para ello, es necesario ejecutar los siguientes comandos:
+
+### Modo JVM (también llamado FAT JAR)
 
 ```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true
+./mvnw clean package -Dquarkus.package.type=uber-jar
+```
+A continuación, construir la imagen de docker
+```shell script
+docker build -f src/main/docker/Dockerfile.jvm-uber-jar -t albo/comic-service-jvm-uber .
+```
+Por último, levantar Docker compose
+```shell script
+docker-compose up -f src/main/docker/docker-compose-native-jvm-uber.yml -p comic_library -d
+```
 
 ### Levantando con docker-compose
 
-Para realizar el levantamiento del entorno de la apliación, el cual incluye una base de datos MySql, es necesario ejecutar el siguiente comando de Docker:
-```shell script
-docker-compose up -f src/main/docker/docker-compose.yml -p comic_library -d
-```
-el cual incluye:
+Para realizar el levantamiento del entorno de la apliación, el cual incluye una base de datos MySql
+
 - BD MySql, versión 8.0.24. Al momento de inicialización de docker-compose, se inyecta script de creación de esquema, así como datos de acceso.
 - Contenedor de la aplicación Quarkus, el cual se crea al momento de levantamiento.
+
+
+## Otros modos
+Se incluyen otras versiones de docker file, para realizar compilación con graalvm. Lamentablemente, he encontrado problemas de conectividad con la BD en este tipo de imágenes, y `no son recomendables hasta nuevo aviso`.
+
+#### Modo JVM
+
+```shell script
+./mvnw clean package
+```
+A continuación, construir la imagen de docker
+```shell script
+docker build -f src/main/docker/Dockerfile.jvm -t albo/comic-service-jvm .
+```
+Por último, levantar Docker compose
+```shell script
+docker-compose up -f src/main/docker/docker-compose-jvm.yml -p comic_library -d
+```
+
+#### Modo Nativo
+
+```shell script
+./mvnw clean package -Pnative -Dquarkus.native.container-build=true
+```
+A continuación, construir la imagen de docker
+```shell script
+docker build -f src/main/docker/Dockerfile.native -t albo/comic-service-native .
+```
+Por último, levantar Docker compose
+```shell script
+docker-compose up -f src/main/docker/docker-compose-native.yml -p comic_library -d
+```
