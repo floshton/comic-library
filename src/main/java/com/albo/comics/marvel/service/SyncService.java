@@ -13,6 +13,7 @@ import com.albo.comics.marvel.vo.remote.comicsByCharacter.Comic;
 import com.albo.comics.marvel.vo.remote.comicsByCharacter.MarvelComicResponse;
 import com.albo.comics.marvel.domain.CharacterDO;
 import com.albo.comics.marvel.domain.ComicDO;
+import com.albo.comics.marvel.exception.ApiSyncException;
 import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.repository.ComicRepository;
 import com.albo.comics.marvel.repository.CreatorRepository;
@@ -53,30 +54,41 @@ public class SyncService {
     /**
      * Scheduled method for syncing info from Marvel API
      */
-    @Scheduled(every = "{marvel.api.sync.frequency}")
+    // @Scheduled(every = "{marvel.api.sync.frequency}")
     void syncData() {
-        // deleteSyncedData();
-        synchronizeDataFromMarvelApi();
+        try {
+            // deleteSyncedData();
+            synchronizeDataFromMarvelApi();
+        } catch (ApiSyncException e) {
+            LOG.error("Sync process couldn't be completed");
+        }
+
     }
 
     /**
      * Sync data from Marvel API for required characters
      */
-    public void synchronizeDataFromMarvelApi() {
+    public void synchronizeDataFromMarvelApi() throws ApiSyncException {
         LOG.infof("Starting sync process from Marvel API ");
         Instant start = Instant.now();
 
-        List<CharacterDO> characters = characterRepository.find("core", true).list();
-        for (CharacterDO characterDO : characters) {
-            Character remoteCharacter = marvelClientServiceWrapper.getRemoteCharacterByName(characterDO.getName());
-            syncDataByCharacter(remoteCharacter);
+        try {
+            List<CharacterDO> characters = characterRepository.find("core", true).list();
+
+            for (CharacterDO characterDO : characters) {
+                Character remoteCharacter = marvelClientServiceWrapper.getRemoteCharacterByName(characterDO.getName());
+                syncDataByCharacter(remoteCharacter);
+            }
+
+            invalidateQueryCaches();
+        } catch (ApiSyncException e) {
+            LOG.error("Error while syncing with API", e);
+            throw e;
+        } finally {
+            Instant finish = Instant.now();
+            long timeElapsed = Duration.between(start, finish).toSeconds();
+            LOG.infof("Sync process from Marvel API Completed in [ %s seconds ]", timeElapsed);
         }
-
-        invalidateQueryCaches();
-
-        Instant finish = Instant.now();
-        long timeElapsed = Duration.between(start, finish).toSeconds();
-        LOG.infof("Sync process from Marvel API Completed in [ %s seconds ]", timeElapsed);
     }
 
     /**
@@ -87,30 +99,35 @@ public class SyncService {
      * @param remoteCharacter the instance of Caracter whose data should be
      *                        requested
      */
-    public void syncDataByCharacter(Character remoteCharacter) {
+    public void syncDataByCharacter(Character remoteCharacter) throws ApiSyncException {
         LOG.infof("Starting sync for character %s [ID = %s]", remoteCharacter.getName(), remoteCharacter.getId());
 
         Integer offset = 0, comicTotalCount = 0;
         MarvelComicResponse response;
         boolean isFirstRun = true;
 
-        do {
-            response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), countLimitPerRequest,
-                    offset);
-            comicTotalCount = response.getResponseData().getTotal();
-            //
-            comicTotalCount = countLimitPerRequest + 5; // delete
+        try {
+            do {
+                response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(),
+                        countLimitPerRequest, offset);
+                comicTotalCount = response.getResponseData().getTotal();
+                //
+                comicTotalCount = countLimitPerRequest + 5; // delete
 
-            if (isFirstRun) {
-                LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),
-                        remoteCharacter.getId(), comicTotalCount);
-            }
-            processApiResponse(response, remoteCharacter);
+                if (isFirstRun) {
+                    LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),
+                            remoteCharacter.getId(), comicTotalCount);
+                }
+                processApiResponse(response, remoteCharacter);
 
-            offset += countLimitPerRequest;
-            isFirstRun = false;
+                offset += countLimitPerRequest;
+                isFirstRun = false;
 
-        } while (offset < comicTotalCount);
+            } while (offset < comicTotalCount);
+        } catch (Exception e) {
+            LOG.error("Error syncing info from Marvel API Server", e);
+            throw new ApiSyncException();
+        }
     }
 
     /**
@@ -120,7 +137,7 @@ public class SyncService {
      * @param response        Marvel API response
      * @param remoteCharacter the instance of Caracter whose data was requested
      */
-    @Transactional
+    @Transactional(rollbackOn = { RuntimeException.class, ApiSyncException.class })
     private void processApiResponse(MarvelComicResponse response, Character remoteCharacter) {
         processCharacterByComicData(response, remoteCharacter);
         processCreatorByComicData(response, remoteCharacter);

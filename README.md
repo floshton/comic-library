@@ -1,58 +1,36 @@
-# comic-service project
+# Proyecto comic-service
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Esta aplicación tiene la responsabilidad de traer datos de la API de Marvel y persistirlos en una base de datos local, únicamente para los personajes `Iron Man (ironman)` y `Captain America (capamerica)` La información que se sincroniza es:
+- Listado de cómics en los que aparece cada personaje.
+- Listado de cada uno de los colaboradores creativos, y su rol, que participa en cada uno de los cómics del punto anterior.
+- Listado de personajes que co-aparecen con los personajes principales.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+## Características
 
-## Running the application in dev mode
+La aplicación esta construida con Quarkus, dada su simplicidad y naturaleza cloud, lo cual lo hace muy ligero.
+El componente sirve peticiones REST y utiliza las siguientes extensiones:
+- Swagger, para exponer UI de Swagger.
+- Health, para exponer UI de salud del componente.
+- Rest (server y client), mediante Jackson.
+- Hibernate ORM Panache, para capa de persistencia.
+- Conectividad con BD MySql.
+- Scheduler, para la programación de llamadas a la API cada 24 hrs.
+- Caffeine, para implementación de caché para peticiones rest.
 
-You can run your application in dev mode that enables live coding using:
+
+## Inicializando aplicación y base de datos
+
+Para realizar el levantamiento del entorno de la apliación, el cual incluye una base de datos MySql, es necesario ejecutar el siguiente comando de Docker:
 ```shell script
-./mvnw compile quarkus:dev
+docker-compose up -f src/main/docker/docker-compose.yml -p comic_library -d
 ```
+el cual incluye:
+- BD MySql, versión 8.0.24. Al momento de inicialización de docker-compose, se inyecta script de creación de esquema, así como datos de acceso.
+- Contenedor de la aplicación Quarkus, el cual se crea al momento de levantamiento.
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+## Extras
 
-## Packaging and running the application
+La aplicación cuenta con dos endpoints adicionales a la funcionalidad básica requerida:
 
-The application can be packaged using:
-```shell script
-./mvnw package
-```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-If you want to build an _über-jar_, execute the following command:
-```shell script
-./mvnw package -Dquarkus.package.type=uber-jar
-```
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: 
-```shell script
-./mvnw package -Pnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./mvnw package -Pnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/comic-service-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.html.
-
-## Related guides
-
-- RESTEasy JAX-RS ([guide](https://quarkus.io/guides/rest-json)): REST endpoint framework implementing JAX-RS and more
-
-## Provided examples
-
-### RESTEasy JAX-RS example
-
-REST is easy peasy with this Hello World RESTEasy resource.
-
-[Related guide section...](https://quarkus.io/guides/getting-started#the-jax-rs-resources)
+- Swagger. UI de Swagger que documenta los servicios expuestos, además de endpoints utilitarios
+- Health. UI que muestra el estado de salud de la aplicación.

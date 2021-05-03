@@ -26,7 +26,7 @@ public class ColaboratorResource {
 
     @GET
     @Path("/{alias}")
-    public CharacterCreator getComics(@PathParam("alias") String alias) {
+    public CharacterCreator getComics(@PathParam("alias") String alias) throws Exception {
         return queryService.getCreatorsAssociatedWithCharacters(alias);
     }
 }

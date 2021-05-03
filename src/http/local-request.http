@@ -10,6 +10,9 @@ GET http://localhost/marvel/characters/ironman HTTP/1.1
 ###
 GET http://localhost/marvel/characters/capamerica HTTP/1.1
 
+###
+GET http://localhost/marvel/characters/antman HTTP/1.1
+
 
 
 ### Consulta al API Marvel y los persiste

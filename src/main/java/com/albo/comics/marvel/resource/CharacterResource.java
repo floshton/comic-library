@@ -22,7 +22,7 @@ public class CharacterResource {
 
     @GET
     @Path("/{alias}")
-    public CharactersInComicsReponse getComics(@PathParam("alias") String alias) {
+    public CharactersInComicsReponse getComics(@PathParam("alias") String alias) throws Exception {
         return queryService.getCharactersAssociatedWithCharacter(alias);
     }
 }

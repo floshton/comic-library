@@ -14,6 +14,7 @@ import com.albo.comics.marvel.domain.CharacterDO;
 import com.albo.comics.marvel.domain.ComicDO;
 import com.albo.comics.marvel.domain.CreatorDO;
 import com.albo.comics.marvel.domain.CreatorType;
+import com.albo.comics.marvel.exception.NoDataAvailableException;
 import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.repository.ComicRepository;
 import com.albo.comics.marvel.vo.local.CharacterCreator;
@@ -42,12 +43,20 @@ public class TranslatingService {
      * @param theCharacter
      * @return the response that contains collaborators associated with theCharacter
      */
-    public CharacterCreator getCreatorsForCharacter(CharacterDO theCharacter) {
-        Set<String> writers = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
-        Set<String> colorists = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
-        Set<String> editors = getCollaboratorsByType(theCharacter, CreatorType.EDITOR);
+    public CharacterCreator getCreatorsForCharacter(CharacterDO theCharacter) throws NoDataAvailableException {
+        Set<String> writers;
+        Set<String> colorists;
+        Set<String> editors;
         LocalDateTime lastSync = theCharacter.getLastSync();
+        try {
+            writers = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
+            colorists = getCollaboratorsByType(theCharacter, CreatorType.WRITER);
+            editors = getCollaboratorsByType(theCharacter, CreatorType.EDITOR);
 
+        } catch (Exception e) {
+            LOG.error("Error getting creators data for character [" + theCharacter.getName() + "]", e);
+            throw new NoDataAvailableException("No data available");
+        }
         return new CharacterCreator(lastSync, editors, writers, colorists);
     }
 
@@ -58,22 +67,29 @@ public class TranslatingService {
      *                     should be reported
      * @return the response that contains characters associated with theCharacter
      */
-    public CharactersInComicsReponse getCharactersAssociatedWithCharacter(CharacterDO theCharacter) {
+    public CharactersInComicsReponse getCharactersAssociatedWithCharacter(CharacterDO theCharacter)
+            throws NoDataAvailableException {
         CharactersInComicsReponse theResponse = new CharactersInComicsReponse();
-        theResponse.setLastSync(theCharacter.getLastSync());
 
-        List<ComicDO> comics = comicRepository.list(":theCharacter MEMBER OF characters",
-                Parameters.with("theCharacter", theCharacter));
-        LOG.debugf("Found %s Comic results", comics.size());
+        try {
+            theResponse.setLastSync(theCharacter.getLastSync());
 
-        for (ComicDO theComic : comics) {
-            List<CharacterDO> charactersInComic = characterRepository
-                    .find(":theComics MEMBER OF comics", Parameters.with("theComics", theComic)).list();
+            List<ComicDO> comics = comicRepository.list(":theCharacter MEMBER OF characters",
+                    Parameters.with("theCharacter", theCharacter));
+            LOG.debugf("Found %s Comic results", comics.size());
 
-            for (CharacterDO character : charactersInComic) {
-                theResponse.addCharacterAndComic(character.getName(), theComic.getName());
+            for (ComicDO theComic : comics) {
+                List<CharacterDO> charactersInComic = characterRepository
+                        .find(":theComics MEMBER OF comics", Parameters.with("theComics", theComic)).list();
+
+                for (CharacterDO character : charactersInComic) {
+                    theResponse.addCharacterAndComic(character.getName(), theComic.getName());
+                }
+
             }
-
+        } catch (Exception e) {
+            LOG.error("Error getting creators data for character [" + theCharacter.getName() + "]", e);
+            throw new NoDataAvailableException("No data available");
         }
 
         return theResponse;
