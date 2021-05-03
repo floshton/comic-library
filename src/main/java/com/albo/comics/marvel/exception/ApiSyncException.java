@@ -1,8 +1,6 @@
 package com.albo.comics.marvel.exception;
 
-import java.io.Serializable;
-
-public class ApiSyncException extends Exception implements Serializable {
+public class ApiSyncException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public ApiSyncException() {
