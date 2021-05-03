@@ -21,7 +21,7 @@ services:
     environment:
       DB_USERNAME: 'albouser'
       DB_PASSWORD: 'secretpassword'
-      DB_URL: 'jdbc:mysql://mysql:3306/comiclibrary?useSSL=true&enabledTLSProtocols=TLSv1.2'
+      DB_URL: 'jdbc:mysql://mysql:3306/comiclibrary'
     ports:
       - '80:80'
     depends_on:
