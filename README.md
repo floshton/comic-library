@@ -44,6 +44,7 @@ Aprovechando la naturaleza contenerizable de Quarkus, ésta debe compilarse y em
 ### Modo JVM (también llamado FAT JAR)
 
 ```shell script
+chmod +x mvnw
 ./mvnw clean package -Dquarkus.package.type=uber-jar
 ```
 A continuación, construir la imagen de docker
@@ -54,6 +55,19 @@ Por último, levantar Docker compose
 ```shell script
 docker-compose up -f src/main/docker/docker-compose-native-jvm-uber.yml -p comic_library -d
 ```
+
+Contenedores iniciados
+![image](https://user-images.githubusercontent.com/4373067/116845816-8809cb80-abac-11eb-8d00-325cabfefa78.png)
+
+Log ejecución
+![image](https://user-images.githubusercontent.com/4373067/116845844-9821ab00-abac-11eb-9a5b-60d6a09e2649.png)
+
+Solicitud colaborator
+![image](https://user-images.githubusercontent.com/4373067/116845993-fa7aab80-abac-11eb-81d9-562e98582950.png)
+
+Solicitud character
+![image](https://user-images.githubusercontent.com/4373067/116845989-f77fbb00-abac-11eb-97d8-7b0555875bdf.png)
+
 
 ### Levantando con docker-compose
 
