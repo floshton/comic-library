@@ -53,7 +53,7 @@ docker build -f src/main/docker/Dockerfile.jvm-uber-jar -t albo/comic-service-jv
 ```
 Por último, levantar Docker compose
 ```shell script
-docker-compose up -f src/main/docker/docker-compose-native-jvm-uber.yml -p comic_library -d
+docker-compose -f src/main/docker/docker-compose-jvm-uber.yml -p comiclibrary up -d
 ```
 
 Contenedores iniciados
@@ -91,7 +91,7 @@ docker build -f src/main/docker/Dockerfile.jvm -t albo/comic-service-jvm .
 ```
 Por último, levantar Docker compose
 ```shell script
-docker-compose up -f src/main/docker/docker-compose-jvm.yml -p comic_library -d
+docker-compose -f src/main/docker/docker-compose-jvm.yml -p comiclibrary up -d
 ```
 
 #### Modo Nativo
@@ -105,5 +105,5 @@ docker build -f src/main/docker/Dockerfile.native -t albo/comic-service-native .
 ```
 Por último, levantar Docker compose
 ```shell script
-docker-compose up -f src/main/docker/docker-compose-native.yml -p comic_library -d
+docker-compose -f src/main/docker/docker-compose-native.yml -p comiclibrary up -d
 ```
