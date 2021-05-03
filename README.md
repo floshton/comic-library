@@ -91,6 +91,8 @@ docker build -f src/main/docker/Dockerfile.jvm -t albo/comic-service-jvm .
 ```
 Por último, levantar Docker compose
 ```shell script
+mkdir -p /tmp/mysql
+chmod 777 /tmp/mysql
 docker-compose -f src/main/docker/docker-compose-jvm.yml -p comiclibrary up -d
 ```
 
