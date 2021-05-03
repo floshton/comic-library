@@ -13,8 +13,8 @@ services:
     expose:
       - '3306'
     volumes:
-      - C:\Users\Jorge\Documents\Projects\java\docker-mysql\data:/var/lib/mysql
-      - ./sql-scripts:/docker-entrypoint-initdb.d
+      - /tmp:/var/lib/mysql
+      - ./src/main/docker/sql-scripts:/docker-entrypoint-initdb.d
   comicservice:
     image: albo/comic-service-native
     restart: always
