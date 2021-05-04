@@ -136,7 +136,7 @@ public class SyncService {
 
     private Integer getThreadPoolSize(Integer totalRecordsCount) {
         Integer calculatedSize = totalRecordsCount / countLimitPerRequest;
-        return Math.max(calculatedSize, maxThreadCountAllowed);
+        return Math.min(calculatedSize, maxThreadCountAllowed);
     }
 
     private void callWithThreads(Character remoteCharacter, Integer totalRecordsCount) {
