@@ -2,7 +2,12 @@ package com.albo.comics.marvel.service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,6 +22,7 @@ import com.albo.comics.marvel.exception.ApiSyncException;
 import com.albo.comics.marvel.repository.CharacterRepository;
 import com.albo.comics.marvel.repository.ComicRepository;
 import com.albo.comics.marvel.repository.CreatorRepository;
+import com.albo.comics.marvel.threads.RequestComicForCharacterTask;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -50,6 +56,8 @@ public class SyncService {
 
     @ConfigProperty(name = "marvel.api.sync.batch.size")
     private Integer countLimitPerRequest;
+    @ConfigProperty(name = "marvel.api.sync.thread.max.count")
+    private Integer maxThreadCountAllowed;
 
     /**
      * Scheduled method for syncing info from Marvel API
@@ -62,7 +70,6 @@ public class SyncService {
         } catch (ApiSyncException e) {
             LOG.error("Sync process couldn't be completed");
         }
-
     }
 
     /**
@@ -104,29 +111,59 @@ public class SyncService {
 
         Integer offset = 0, comicTotalCount = 0;
         MarvelComicResponse response;
-        boolean isFirstRun = true;
 
         try {
-            do {
-                response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(),
-                        countLimitPerRequest, offset);
-                comicTotalCount = response.getResponseData().getTotal();
-                
-                //comicTotalCount = countLimitPerRequest + 5; // delete
+            response = marvelClientServiceWrapper.getComicsByCharacterId(remoteCharacter.getId(), countLimitPerRequest,
+                    offset);
+            comicTotalCount = response.getResponseData().getTotal();
+            //comicTotalCount = (countLimitPerRequest * 3) + 5; // delete
 
-                if (isFirstRun) {
-                    LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),
-                            remoteCharacter.getId(), comicTotalCount);
-                }
-                processApiResponse(response, remoteCharacter);
+            LOG.infof("Comic Count for Character %s [ ID = %s ] = %s", remoteCharacter.getName(),
+                    remoteCharacter.getId(), comicTotalCount);
 
-                offset += countLimitPerRequest;
-                isFirstRun = false;
+            processApiResponse(response, remoteCharacter);
 
-            } while (offset < comicTotalCount);
+            if (comicTotalCount > countLimitPerRequest) {
+                LOG.info("Creating threads for additional requests based on total count");
+                callWithThreads(remoteCharacter, comicTotalCount);
+            }
+
         } catch (Exception e) {
             LOG.error("Error syncing info from Marvel API Server", e);
             throw new ApiSyncException();
+        }
+    }
+
+    private Integer getThreadPoolSize(Integer totalRecordsCount) {
+        Integer calculatedSize = totalRecordsCount / countLimitPerRequest;
+        return Math.max(calculatedSize, maxThreadCountAllowed);
+    }
+
+    private void callWithThreads(Character remoteCharacter, Integer totalRecordsCount) {
+        Integer maxThreadPoolSize = getThreadPoolSize(totalRecordsCount);
+        LOG.debugf("Creating Thread Pool with fixed size of [ %s ]", maxThreadPoolSize);
+        ExecutorService executor = Executors.newFixedThreadPool(maxThreadPoolSize);
+        List<Future<MarvelComicResponse>> futuresResponse = new ArrayList<>();
+        Integer actualNeededThreads = totalRecordsCount / countLimitPerRequest;
+        Integer threadOffset = countLimitPerRequest;
+
+        try {
+            for (int i = 0; i < actualNeededThreads; i++) {
+                threadOffset += countLimitPerRequest;
+                Callable task = new RequestComicForCharacterTask(remoteCharacter, marvelClientServiceWrapper,
+                        countLimitPerRequest, threadOffset);
+                Future<MarvelComicResponse> future = executor.submit(task);
+                futuresResponse.add(future);
+            }
+
+            for (Future<MarvelComicResponse> future : futuresResponse) {
+                MarvelComicResponse response = future.get();
+                processApiResponse(response, remoteCharacter);
+            }
+        } catch (Exception e) {
+            LOG.error("Error calling API from executor", e);
+        } finally {
+            executor.shutdown();
         }
     }
 
@@ -144,6 +181,7 @@ public class SyncService {
     }
 
     private void processCharacterByComicData(MarvelComicResponse response, Character remoteCharacter) {
+        LOG.debugf("Processing characters by comic data for Character [%s]", remoteCharacter.getName());
         List<Comic> comics = response.getResponseData().getComics();
         for (Comic comic : comics) {
             createAndSaveComic(comic, remoteCharacter.getName());
@@ -151,6 +189,7 @@ public class SyncService {
     }
 
     private void processCreatorByComicData(MarvelComicResponse response, Character remoteCharacter) {
+        LOG.debugf("Processing creators data for Character [%s]", remoteCharacter.getName());
         List<Comic> comics = response.getResponseData().getComics();
         CharacterDO theCharacter = translatingService.buildCharacter(remoteCharacter, comics);
         characterRepository.save(theCharacter);
